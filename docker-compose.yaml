@@ -13,7 +13,7 @@ x-airflow-common:
     # AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW__API__AUTH_BACKENDS: ''
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-minio==7.1.14 apache-airflow-providers-docker==3.7.1}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-minio==7.1.14 apache-airflow-providers-docker==3.7.1 apache-airflow-providers-slack==8.1.0}
     # AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
@@ -68,7 +68,7 @@ services:
       - ndsnet
 
   airflow-webserver:
-    container_name: airflow-webserver
+    container_name: a-webserver
     <<: *airflow-common
     command: webserver
     ports:
@@ -88,7 +88,7 @@ services:
       - ndsnet
 
   airflow-scheduler:
-    container_name: airflow-scheduler
+    container_name: a-scheduler
     <<: *airflow-common
     command: scheduler
     healthcheck:
@@ -106,7 +106,7 @@ services:
       - ndsnet
 
   airflow-worker:
-    container_name: airflow-worker
+    container_name: a-worker
     <<: *airflow-common
     command: celery worker
     healthcheck:
@@ -129,7 +129,7 @@ services:
       - ndsnet
 
   airflow-triggerer:
-    container_name: airflow-triggerer
+    container_name: a-triggerer
     <<: *airflow-common
     command: triggerer
     healthcheck:
@@ -147,6 +147,7 @@ services:
       - ndsnet
 
   airflow-init:
+    container_name: airflow-init
     <<: *airflow-common
     entrypoint: /bin/bash
     command:
@@ -211,6 +212,7 @@ services:
       - ndsnet
 
   airflow-cli:
+    container_name: airflow-cli
     <<: *airflow-common
     profiles:
       - debug
@@ -344,7 +346,28 @@ services:
       resources:
         limits:
           memory: 1GB
+  
+  metabase:
+    container_name: metabase
+    image: metabase/metabase
+    restart: always
+    ports:
+      - 3000:3000
+    volumes:
+      - ./include/data/metabase:/metabase-data
+    networks:
+      - ndsnet
 
+  docker-proxy:
+    container_name: docker-proxy
+    image: alpine/socat
+    command: "TCP4-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock"
+    ports:
+      - "2376:2375"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - ndsnet
 volumes:
   postgres-db-volume:
 

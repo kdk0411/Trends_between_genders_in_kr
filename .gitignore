@@ -1,0 +1,3 @@
+include/data/*
+__pycache__
+logs/*
