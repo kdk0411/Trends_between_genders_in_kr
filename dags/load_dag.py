@@ -26,7 +26,7 @@ with DAG(
     )
 ) as dag:
     
-    with TaskGroup("json_extraction_group") as load_to_dw_group:
+    with TaskGroup("load_to_dw_group") as load_to_dw_group:
         for folder_name in folder_names:
             
             load_to_dw = LoadCsvOperator(

@@ -4,8 +4,7 @@ from airflow.hooks.base_hook import BaseHook
 
 import boto3
 from botocore.client import Config
-from sqlalchemy import create_engine, exc, Table, Column, Integer, Float, Date, MetaData, String
-from sqlalchemy.schema import PrimaryKeyConstraint
+from sqlalchemy import create_engine, Table, Column, Integer, Float, MetaData, String
 
 import pandas as pd
 import os

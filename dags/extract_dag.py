@@ -5,7 +5,7 @@ from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.slack.notifications.slack import SlackNotifier
 
 from custom.json import JsonExtractOperator
-from custom.sensor import HTTPJsonSensor
+from custom.sensor import APISensor
 from datetime import datetime
 import os
 
@@ -36,10 +36,9 @@ with DAG(
         'gender_income': Variable.get('gender_income_url')
     }
 
-    # TaskGroup 정의
     with TaskGroup("json_extraction_group") as json_extraction_group:
         for key, url in urls.items():
-            check_url = HTTPJsonSensor(
+            check_url = APISensor(
                 task_id=f'Check_url_{key}',
                 url=url,
                 dag=dag,
