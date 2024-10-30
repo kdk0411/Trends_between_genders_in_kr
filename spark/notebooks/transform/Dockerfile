@@ -7,11 +7,11 @@ RUN wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.2/hadoo
     && mv hadoop-aws-3.3.2.jar /spark/jars/ \
     && mv aws-java-sdk-bundle-1.11.1026.jar /spark/jars/
 
-ENV AWS_ACCESS_KEY_ID minio
-ENV AWS_SECRET_ACCESS_KEY minio123
-ENV ENDPOINT http://host.docker.internal:9000
+ENV AWS_ACCESS_KEY_ID=minio
+ENV AWS_SECRET_ACCESS_KEY=minio123
+ENV ENDPOINT=http://host.docker.internal:9000
 
-ENV SPARK_APPLICATION_PYTHON_LOCATION /app/transform.py
-ENV SPARK_APPLICATION_ARGS "trend"
+ENV SPARK_APPLICATION_PYTHON_LOCATION=/app/transform.py
+ENV SPARK_APPLICATION_ARGS="trend"
 
-ENV ENABLE_INIT_DAEMON false
+ENV ENABLE_INIT_DAEMON=false

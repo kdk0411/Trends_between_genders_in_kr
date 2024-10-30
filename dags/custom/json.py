@@ -9,12 +9,17 @@ from botocore.exceptions import ClientError
 import requests
 import json
 
+def create_bucket_name(key, ds):
+    formatted_date = ds[:7]  # YYYY-MM 형식으로 변환
+    return f'{formatted_date}/{key}'
+
+
 class JsonExtractOperator(BaseOperator):
     
     @apply_defaults
-    def __init__(self, bucket_name, url, *args, **kwargs):
+    def __init__(self, key, url, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.bucket_name = bucket_name
+        self.key = key
         self.url = url
         
         connection = BaseHook.get_connection('minio')
@@ -28,6 +33,8 @@ class JsonExtractOperator(BaseOperator):
                 )
         
     def execute(self, context):
+        ds = context['ds']
+        self.bucket_name = create_bucket_name(self.key, ds)
         self.log.info(f"Executing Json_Extract_Operator Guideline with param_1 : {self.bucket_name} and param_2 : {self.url}")
         
         self.check_bucket()
@@ -48,7 +55,7 @@ class JsonExtractOperator(BaseOperator):
         try:
             self.client.put_object(
                 Bucket='trend',
-                Key=f'{self.bucket_name}.json',
+                Key=f'{self.bucket_name}/{self.key}.json',
                 Body=json_data,
                 ContentType='application/json'
             )
@@ -59,8 +66,9 @@ class JsonExtractOperator(BaseOperator):
 
     def check_bucket(self):
         try:
-            self.client.head_bucket(Bucket=self.bucket_name)
+            self.client.head_bucket(Bucket='trend')
         except ClientError as e:
             if e.response['Error']['Code'] == '404':
-                self.client.create_bucket(Bucket=self.bucket_name)
-        
+                self.client.create_bucket(Bucket='trend')
+    
+    

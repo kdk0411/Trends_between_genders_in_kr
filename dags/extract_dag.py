@@ -9,10 +9,6 @@ from custom.sensor import HTTPJsonSensor
 from datetime import datetime
 import os
 
-def create_bucket_name(key, ds):
-    formatted_date = ds[:7]  # YYYY-MM 형식으로 변환
-    return f'{formatted_date}/{key}'
-
 default_args = {
     'owner': 'kdk0411',
     'start_date': datetime(2024, 10, 29),
@@ -43,21 +39,22 @@ with DAG(
     # TaskGroup 정의
     with TaskGroup("json_extraction_group") as json_extraction_group:
         for key, url in urls.items():
-            check_url = HTTPJsonSensor(
-                task_id=f'Check_url_{key}',
-                conn_id='kosis_api',
-                url=url,
-                dag=dag,
-            )
+            # check_url = HTTPJsonSensor(
+            #     task_id=f'Check_url_{key}',
+            #     conn_id='kosis_api',
+            #     url=url,
+            #     dag=dag,
+            # )
 
             json_extract = JsonExtractOperator(
                 task_id=f'json_extract{key}',
-                bucket_name='{{ macros.ds_format(ds, "%Y-%m-%d", "%Y-%m") }}/' + key,
+                key=key,
                 url=url,
                 dag=dag,
             )
 
-            check_url >> json_extract
+            # check_url >> json_extract
+            json_extract
 
     trigger_transform_dag = TriggerDagRunOperator(
         task_id='trigger_transform_dag',

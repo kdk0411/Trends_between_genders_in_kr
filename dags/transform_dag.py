@@ -2,9 +2,12 @@ from airflow import DAG
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.slack.notifications.slack import SlackNotifier
-
 import os
 
+def create_bucket_name(ds):
+    formatted_date = ds[:7]
+    return formatted_date
+    
 folder_names = ['population_trend', 'average_first_marriage_age', 'gender_income']
 
 default_args = {

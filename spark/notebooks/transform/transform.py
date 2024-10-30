@@ -12,7 +12,6 @@ if __name__ == '__main__':
     def app():
         try:
             logger.info("Starting Spark session")
-            # Create a SparkSession
             spark = SparkSession.builder.appName("FormatJson") \
                 .config("fs.s3a.access.key", os.getenv("AWS_ACCESS_KEY_ID", "minio")) \
                 .config("fs.s3a.secret.key", os.getenv("AWS_SECRET_ACCESS_KEY", "minio123")) \
@@ -75,22 +74,18 @@ if __name__ == '__main__':
                 )
 
             
-            output_csv_path = f's3a://{bucket_name}/{date}/{category}/{category}.csv'
+            output_csv_path = f's3a://{bucket_name}/{date}/{category}'
             logger.info(f"Saving formatted data to: {output_csv_path}")
             
             formatted_df.write \
                 .mode("overwrite") \
-                .option("header", "false") \
+                .option("header", "true") \
                 .csv(output_csv_path)
             logger.info("Formatted data saved successfully.")
         
             
         except Exception as e:
             logger.error("An error occurred:", exc_info=True)
-            
-        finally:
-            logger.info("Stopping Spark session")
-            spark.stop()
 
     app()
     os.system('kill %d' % os.getpid())
