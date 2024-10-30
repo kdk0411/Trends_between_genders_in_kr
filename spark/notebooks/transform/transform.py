@@ -1,5 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, concat, lit, when
+from pyspark.sql import functions as F
 
 import os
 import logging
@@ -33,48 +34,66 @@ if __name__ == '__main__':
                 logger.info("JSON file read successfully.")
             except Exception as e:
                 logger.error("Failed to read json file.")
-            
+
             if category == 'population_trend':
                 formatted_df = df.select(
-                    col("PRD_DE").alias("Date"),
-                    col("DT").alias("Value"),
-                    col("PRD_SE").alias("Gender"),
-                    when(col("C1_NM_ENG") == "Whole country", "Total").otherwise(col("C1_NM_ENG")).alias("Country"),
-                    col("C2_NM").alias("Category")
+                    col("PRD_DE").cast("int").alias("date"),
+                    col("DT").cast("float").alias("value"),
+                    col("PRD_SE").alias("gender").cast("string"),
+                    when(col("C1_NM_ENG") == "Whole country", "Total") \
+                        .otherwise(col("C1_NM_ENG").cast("string")) \
+                        .alias("country"),
+                    col("C2_NM").cast("string").alias("category")
                 )
-                
-                formatted_df = formatted_df.withColumn("Date", concat(
-                    col("Date").substr(1, 4),
-                    lit("-"),
-                    col("Date").substr(5, 2),
-                    lit("-01")
+                formatted_df = formatted_df.withColumn("trend_id", concat(
+                    col("date").cast("string"),
+                    lit("_"),
+                    col("country"),
+                    lit("_"),
+                    col("category")
                 ))
-                
-            
             elif category == 'average_first_marriage_age':
                 formatted_df = df.select(
-                    col("PRD_DE").alias("Date"),
+                    col("PRD_DE").cast("int").alias("date"),
                     when(col("ITM_NM_ENG") == "Husband", "M") \
                         .when(col("ITM_NM_ENG") == "Wife", "F") \
-                        .otherwise(col("ITM_NM_ENG")).alias("Gender"),
-                    col("DT").alias("Age"),
-                    when(col("C1_NM_ENG") == "Whole country", "Total").otherwise(col("C1_NM_ENG")).alias("Country"),
+                        .otherwise(col("ITM_NM_ENG").cast("string")).alias("gender"),
+                    col("DT").cast("int").alias("age"),
+                    when(col("C1_NM_ENG") == "Whole country", "Total") \
+                        .otherwise(col("C1_NM_ENG").cast("string")).alias("country"),
                 )
-
-                
+                formatted_df = formatted_df.withColumn("age_id", concat(
+                    col("date").cast("string"),
+                    lit("_"),
+                    col("gender"),
+                    lit("_"),
+                    col("country")
+                ))
             elif category == 'gender_income':
                 formatted_df = df.select(
-                    col("PRD_DE").alias("Date"),
-                    col("ITM_NM_ENG").alias("Category"),
-                    col("UNIT_NM").alias("Unit"),
-                    col("C1_NM").alias("Employment_type"),
+                    col("PRD_DE").cast("int").alias("date"),
+                    col("ITM_NM_ENG").cast("string").alias("category"),
+                    col("UNIT_NM").cast("string").alias("unit"),
+                    col("C1_NM").cast("string").alias("employment_type"),
                     when(col("C2_NM_ENG") == "Male", "M") \
                         .when(col("C2_NM_ENG") == "Female", "F") \
-                        .otherwise(col("C2_NM_ENG")).alias("Gender"),
+                        .otherwise(col("C2_NM_ENG").cast("string")).alias("gender"),
+                    col("DT").cast("float").alias("value")
                 )
-
+                formatted_df = formatted_df.withColumn("category", F.regexp_replace(
+                    F.regexp_replace(F.regexp_replace(col("category"), " ", "_"), "/", "_"), "&", "_"
+                ))
+                formatted_df = formatted_df.withColumn("income_id", concat(
+                    col("date").cast("string"),
+                    lit("_"),
+                    col("category"),
+                    lit('_'),
+                    col("gender"),
+                    lit("_"),
+                    col("employment_type")
+                ))
             
-            output_csv_path = f's3a://{bucket_name}/{date}/{category}'
+            output_csv_path = f's3a://{bucket_name}/{date}/{category}/csv'
             logger.info(f"Saving formatted data to: {output_csv_path}")
             
             formatted_df.write \

@@ -39,12 +39,11 @@ with DAG(
     # TaskGroup 정의
     with TaskGroup("json_extraction_group") as json_extraction_group:
         for key, url in urls.items():
-            # check_url = HTTPJsonSensor(
-            #     task_id=f'Check_url_{key}',
-            #     conn_id='kosis_api',
-            #     url=url,
-            #     dag=dag,
-            # )
+            check_url = HTTPJsonSensor(
+                task_id=f'Check_url_{key}',
+                url=url,
+                dag=dag,
+            )
 
             json_extract = JsonExtractOperator(
                 task_id=f'json_extract{key}',
@@ -53,8 +52,7 @@ with DAG(
                 dag=dag,
             )
 
-            # check_url >> json_extract
-            json_extract
+            check_url >> json_extract
 
     trigger_transform_dag = TriggerDagRunOperator(
         task_id='trigger_transform_dag',

@@ -9,10 +9,6 @@ from botocore.exceptions import ClientError
 import requests
 import json
 
-def create_bucket_name(key, ds):
-    formatted_date = ds[:7]  # YYYY-MM 형식으로 변환
-    return f'{formatted_date}/{key}'
-
 
 class JsonExtractOperator(BaseOperator):
     
@@ -33,8 +29,8 @@ class JsonExtractOperator(BaseOperator):
                 )
         
     def execute(self, context):
-        ds = context['ds']
-        self.bucket_name = create_bucket_name(self.key, ds)
+        self.ds = context['ds']
+        self.bucket_name = self.create_bucket_name()
         self.log.info(f"Executing Json_Extract_Operator Guideline with param_1 : {self.bucket_name} and param_2 : {self.url}")
         
         self.check_bucket()
@@ -63,12 +59,14 @@ class JsonExtractOperator(BaseOperator):
         except ClientError as e:
             self.log.error(f"Error uploading to MinIO: {e}")
             raise
-
+    
+    def create_bucket_name(self):
+        formatted_date = self.ds[:7]  # YYYY-MM 형식으로 변환
+        return f'{formatted_date}/{self.key}'
+    
     def check_bucket(self):
         try:
             self.client.head_bucket(Bucket='trend')
         except ClientError as e:
             if e.response['Error']['Code'] == '404':
                 self.client.create_bucket(Bucket='trend')
-    
-    

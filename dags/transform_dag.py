@@ -2,12 +2,12 @@ from airflow import DAG
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.slack.notifications.slack import SlackNotifier
+
+from custom.sensor import CustomJsonFileSensor
+
 import os
 
-def create_bucket_name(ds):
-    formatted_date = ds[:7]
-    return formatted_date
-    
+
 folder_names = ['population_trend', 'average_first_marriage_age', 'gender_income']
 
 default_args = {
@@ -18,6 +18,7 @@ default_args = {
 with DAG(
     dag_id=os.path.splitext(os.path.basename(__file__))[0],
     default_args=default_args,
+    schedule_interval=None,
     on_success_callback=SlackNotifier(
         text="{{ dag.dag_id }} DAG succeeded!", 
         channel="#monitoring", 
@@ -30,6 +31,13 @@ with DAG(
 ) as dag:
     
     for folder_name in folder_names:
+
+        file_sensor = CustomJsonFileSensor(
+            task_id=f'{folder_name}_file_sensor',
+            bucket_name='trend',
+            key=folder_name,
+            dag=dag
+        )
     
         format_data = DockerOperator(
             task_id=f'process_{folder_name}',
