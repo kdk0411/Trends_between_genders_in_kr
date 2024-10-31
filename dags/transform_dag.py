@@ -4,7 +4,7 @@ from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.slack.notifications.slack import SlackNotifier
 
-from custom.sensor import CustomJsonFileSensor
+from custom.sensor import CustomFileSensor
 
 import os
 
@@ -33,10 +33,11 @@ with DAG(
     with TaskGroup("json_transform_group") as json_transform_group:
         for folder_name in folder_names:
 
-            file_sensor = CustomJsonFileSensor(
+            file_sensor = CustomFileSensor(
                 task_id=f'{folder_name}_file_sensor',
                 bucket_name='trend',
                 key=folder_name,
+                file_type='.json',
                 dag=dag
             )
         

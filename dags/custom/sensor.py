@@ -36,11 +36,12 @@ class APISensor(BaseOperator):
             self.log.error("Response is not in JSON format.")
             raise AirflowException("Failed to decode JSON response.")
         
-class CustomJsonFileSensor(BaseOperator):
-    def __init__(self, bucket_name, key,*args, **kwargs):
+class CustomFileSensor(BaseOperator):
+    def __init__(self, bucket_name, key, file_type, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bucket_name = bucket_name
         self.key = key
+        self.file_type = file_type
 
         connection = BaseHook.get_connection('minio')
         endpoint_url = connection.extra_dejson.get('endpoint_url')
@@ -55,19 +56,33 @@ class CustomJsonFileSensor(BaseOperator):
     def execute(self, context):
         ds = context['ds']
         dag_run_date = create_date(ds)
-        file_name = self.key + '.json'
-        file_path = f'{dag_run_date}/{self.key}/{file_name}'
-
-        self.client.head_object(Bucket=self.bucket_name, Key=file_path)
-
-        try:
-            self.client.head_object(Bucket=self.bucket_name, Key=file_path)
-            self.log.info(f'File {file_path} exists in bucket {self.bucket_name}.')
-            return True
-        except ClientError as e:
-            if e.response['Error']['Code'] == '404':
-                self.log.error(f'File {file_path} does not exist in bucket {self.bucket_name}. Failing the DAG.')
-                raise Exception(f'File {file_path} does not exist.')
+        
+        if self.file_type == '.json':
+            file_name = self.key + self.file_type
+            file_path = f'{dag_run_date}/{self.key}/{file_name}'
+            try:
+                self.client.head_object(Bucket=self.bucket_name, Key=file_path)
+                self.log.info(f'File {file_path} exists in bucket {self.bucket_name}.')
+                return True
+            except ClientError as e:
+                if e.response['Error']['Code'] == '404':
+                    self.log.error(f'File {file_path} does not exist in bucket {self.bucket_name}. Failing the DAG.')
+                    raise Exception(f'File {file_path} does not exist.')
+                else:
+                    self.log.error(f'Error occurred: {e}')
+                    raise
+        
+        elif self.file_type == '.csv':
+            file_path = f'{dag_run_date}/{self.key}/csv/'
+            objects = self.client.list_objects_v2(Bucket=self.bucket_name, Prefix=file_path)
+            csv_file = [obj for obj in objects.get('Contents', []) if obj['Key'].endswith('.csv')]
+            
+            if csv_file:
+                self.log.info(f'{len(csv_file)} CSV file found in {file_path}.')
+                return True
             else:
-                self.log.error(f'Error occurred: {e}')
-                raise
+                self.log.error(f'CSV File Not Found in {file_path}. Failing the DAG ')
+                raise Exception(f'CSV File Not Found in {file_path}.')
+
+        
+            
