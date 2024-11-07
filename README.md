@@ -27,4 +27,11 @@
 ![image](https://github.com/user-attachments/assets/a9f0e82b-24b6-42b8-bac5-5179b9769923)
 
 ## 4. 시각화
-### 4-1. 
+### 4-1. 성별간 트렌드
+![population_trend_Chart](https://github.com/user-attachments/assets/b29c2e79-380d-4ed8-9cf4-c591a7da11a5)
+
+### 4-2. 성별간 초혼 연령
+![average_first_marriage_age_Chart](https://github.com/user-attachments/assets/d7074146-025a-44e7-bb40-838cf7c9b57b)
+
+### 4-3. 성별간 소득 차이
+![gender_income_Chart](https://github.com/user-attachments/assets/a7fece2a-f9de-4da7-81d0-3f6de64733b8)
