@@ -35,3 +35,7 @@
 
 ### 4-3. 성별간 소득 차이
 ![gender_income_Chart](https://github.com/user-attachments/assets/a7fece2a-f9de-4da7-81d0-3f6de64733b8)
+
+## 5. 프로젝트 후기
+통계청 API를 사용하는 좋은 경험을 하였다. 통계청 API가 어떤 구성으로 이루어져 있는지 알 수 있는 시간이였다.
+
